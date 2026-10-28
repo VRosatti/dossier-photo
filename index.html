@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Dossier photographique</title>
+<style>
+:root{
+  --paper:#F2F3F1; --ink:#1D2422; --graphite:#5D6662; --line:#CDD2CE;
+  --surface:#FFFFFF; --vp:#E3E6E2; --accent:#2448C9; --accent-ink:#FFFFFF; --danger:#B3261E;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#171B1A; --ink:#E8ECEA; --graphite:#9AA4A0; --line:#343B39;
+    --surface:#202625; --vp:#0F1211; --accent:#7D97F4; --accent-ink:#0D1433; --danger:#F2A19B;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:Calibri,Carlito,"Segoe UI",system-ui,-apple-system,sans-serif;
+  background:var(--paper); color:var(--ink); font-size:16px; line-height:1.35;
+  display:flex; flex-direction:column; overflow:hidden; -webkit-tap-highlight-color:transparent;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+}
+button,input,select{font:inherit;color:inherit}
+button{
+  min-height:44px; padding:0 14px; border:1px solid var(--line); background:var(--surface);
+  border-radius:6px; cursor:pointer; white-space:nowrap;
+}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+button.danger{color:var(--danger)}
+button:disabled{opacity:.45;cursor:default}
+[hidden]{display:none !important}
+
+.bar{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.bar .title{flex:1;min-width:160px}
+.bar .title strong{display:block;font-size:19px;line-height:1.15}
+.bar .title small{color:var(--graphite);font-size:14px}
+.bar .actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.tabs{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tab{min-height:36px;border-radius:18px;padding:0 14px;font-size:15px}
+.tab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tab.ghost{border-style:dashed;color:var(--graphite)}
+
+#wrap{position:relative;flex:1;min-height:0}
+#viewport{position:absolute;inset:0;overflow:hidden;background:var(--vp);touch-action:none;user-select:none;-webkit-user-select:none}
+#viewport.place{cursor:crosshair}
+#viewport.nav{cursor:grab}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0;background:#fff;box-shadow:0 0 0 1px var(--line)}
+#stage img{display:block;pointer-events:none;-webkit-user-drag:none}
+#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+.tools{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:flex}
+.seg button{border-radius:0}
+.seg button:first-child{border-radius:6px 0 0 6px}
+.seg button:last-child{border-radius:0 6px 6px 0;border-left:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+.empty p{max-width:34ch;margin:0;color:var(--graphite);font-size:18px}
+.empty .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;max-height:60vh;overflow:auto;z-index:5;
+  background:var(--surface);border-top:1px solid var(--line);border-radius:14px 14px 0 0;
+  padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 -6px 24px rgba(0,0,0,.18);
+}
+@media (min-width:900px){
+  .sheet{left:auto;right:16px;bottom:16px;width:350px;max-height:calc(100% - 150px);border:1px solid var(--line);border-radius:10px}
+}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sheet-head strong{font-size:20px}
+.sheet-head button{min-width:44px;padding:0}
+.photo{background:var(--vp);border-radius:6px;min-height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden}
+.photo img{display:block;max-width:100%;max-height:230px}
+.photo span{color:var(--graphite)}
+.row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.row > button{flex:1}
+.field{display:block;margin-bottom:12px}
+.field > span{display:block;font-size:14px;color:var(--graphite);margin-bottom:4px}
+.field input[type=text],.field input:not([type]),.field input[type=date],.field select{
+  width:100%;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)
+}
+.field input[type=range]{width:100%;accent-color:var(--accent)}
+.field small{display:block;color:var(--graphite);font-size:13px;margin-top:3px}
+.angle{display:flex;align-items:center;gap:10px}
+.angle output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 40px)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.dlg{padding:18px 20px}
+.dlg h2{margin:0 0 14px;font-size:22px}
+.dlg h3{margin:4px 0 6px;font-size:17px}
+.dlg hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+.hint{color:var(--graphite);font-size:14px;margin:0 0 10px}
+.fname{font-size:14px;color:var(--graphite);word-break:break-all;margin:0 0 12px}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:20;
+  background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:8px;max-width:calc(100vw - 32px);font-size:15px}
+@media (max-width:600px){ .bar .actions button{padding:0 10px} }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="title"><strong id="projName">Dossier photographique</strong><small id="projMeta"></small></div>
+  <div class="actions">
+    <button id="btnPlan">Ajouter un plan</button>
+    <button id="btnProjet">Projet</button>
+    <button id="btnExport" class="primary">Exporter le PDF</button>
+  </div>
+</header>
+<nav id="tabs" class="tabs" hidden></nav>
+
+<main id="wrap">
+  <div id="viewport" class="place">
+    <div id="stage" hidden><img id="planImg" alt="Plan"></div>
+    <svg id="overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div id="empty" class="empty">
+    <p>Ajoute un plan en PDF, puis touche le plan à chaque endroit où tu prends une photo.</p>
+    <div class="row">
+      <button class="primary" id="emptyPlan">Ajouter un plan PDF</button>
+      <button id="emptyOpen">Ouvrir un fichier projet</button>
+    </div>
+  </div>
+  <div class="tools" id="tools" hidden>
+    <div class="seg">
+      <button id="modePlace" aria-pressed="true">Placer des points</button>
+      <button id="modeNav" aria-pressed="false">Naviguer</button>
+    </div>
+    <button id="btnFit">Tout le plan</button>
+  </div>
+</main>
+
+<aside id="sheet" class="sheet" hidden>
+  <div class="sheet-head"><strong id="sNum">Point</strong><button id="sClose" aria-label="Fermer">✕</button></div>
+  <div class="photo" id="sPhoto"></div>
+  <div class="row">
+    <button id="sCam" class="primary">Prendre la photo</button>
+    <button id="sPick">Choisir une image</button>
+  </div>
+  <div class="row"><button id="sRot">Pivoter la photo de 90°</button></div>
+  <div class="field"><span>Prise de vue</span>
+    <div class="seg">
+      <button id="sInt" aria-pressed="true">Depuis l’intérieur</button>
+      <button id="sExt" aria-pressed="false">Depuis l’extérieur</button>
+    </div>
+  </div>
+  <label class="field"><span>Direction</span>
+    <div class="angle"><input type="range" id="sAngle" min="0" max="359" step="1"><output id="sAngleOut">0°</output></div>
+    <small>Ou fais glisser la poignée ronde sur le plan.</small>
+  </label>
+  <label class="field"><span>Légende (facultatif)</span><input id="sLegend" type="text" placeholder="ex. Façade sud, vue d’ensemble"></label>
+  <button id="sDel" class="danger" style="width:100%">Supprimer ce point</button>
+</aside>
+
+<dialog id="dlgProjet">
+  <form method="dialog" class="dlg" id="fProjet">
+    <h2>Projet</h2>
+    <label class="field"><span>Identifiant de l’affaire</span><input name="affaire" placeholder="ex. SEZ" autocomplete="off"></label>
+    <label class="field"><span>Projet</span><input name="projet" placeholder="Nom ou adresse du projet" autocomplete="off"></label>
+    <label class="field"><span>Objet du dossier</span><input name="objet" placeholder="ex. Façades existantes" autocomplete="off"><small>Repris en tête de page et dans le nom du fichier.</small></label>
+    <label class="field"><span>Auteur</span><input name="auteur" autocomplete="off"></label>
+    <label class="field"><span>Date</span><input type="date" name="date"></label>
+    <label class="field"><span>Taille des repères sur le PDF</span>
+      <select name="taille"><option value="0.75">Petite</option><option value="1">Moyenne</option><option value="1.4">Grande</option></select>
+    </label>
+    <p class="fname">Nom du fichier : <span id="fnPreview"></span></p>
+    <div class="row"><button value="ok" class="primary">Enregistrer</button></div>
+    <hr>
+    <h3>Fichier projet</h3>
+    <p class="hint">Pour continuer sur un autre appareil : enregistre le fichier projet, envoie-le (mail, serveur), puis ouvre-le là-bas.</p>
+    <div class="row">
+      <button type="button" id="pjSave">Enregistrer le fichier projet</button>
+      <button type="button" id="pjOpen">Ouvrir un fichier projet</button>
+    </div>
+    <div class="row"><button type="button" id="pjNew" class="danger">Nouveau projet</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgOut">
+  <div class="dlg">
+    <h2>Fichier prêt</h2>
+    <p class="fname" id="outName"></p>
+    <div class="row">
+      <button id="outShare" class="primary">Partager</button>
+      <button id="outDl">Télécharger</button>
+    </div>
+    <div class="row"><button id="outClose">Fermer</button></div>
+  </div>
+</dialog>
+
+<input type="file" id="inPdf" accept="application/pdf,.pdf" hidden>
+<input type="file" id="inCam" accept="image/*" capture="environment" hidden>
+<input type="file" id="inPick" accept="image/*" hidden>
+<input type="file" id="inJson" accept=".json,application/json" hidden>
+<div id="toast" hidden></div>
+
+<script src="lib/pdf.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const MARK = '#2448C9';
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-5);
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const dist = (a, b, c, d) => Math.hypot(a - c, b - d);
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('image illisible')); i.src = src; });
+
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js';
+
+function newProject() {
+  return { format: 'mr-dossier-photo', version: 1,
+    info: { affaire: '', projet: '', objet: '', auteur: '', date: today(), taille: 1 },
+    plans: [], points: [] };
+}
+let P = newProject(), curId = null, selId = null, mode = 'place', G = null;
+const view = { s: 1, tx: 0, ty: 0 };
+const vp = $('#viewport'), stage = $('#stage'), planImg = $('#planImg'), svg = $('#overlay');
+
+const curPlan = () => P.plans.find(p => p.id === curId) || null;
+const pointsOf = id => P.points.filter(p => p.planId === id);
+const numOf = pt => P.points.indexOf(pt) + 1;
+const selPoint = () => P.points.find(p => p.id === selId) || null;
+const sideLabel = s => s === 'ext' ? 'vue depuis l’extérieur' : 'vue depuis l’intérieur';
+
+/* ---------- Toast ---------- */
+function toast(msg, ms = 2800) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(t._h);
+  if (ms) t._h = setTimeout(() => t.hidden = true, ms);
+}
+
+/* ---------- Sauvegarde automatique (IndexedDB, reste sur l'appareil) ---------- */
+let dbp = null;
+function db() {
+  if (!dbp) dbp = new Promise((res, rej) => {
+    const r = indexedDB.open('mr-dossier-photo', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+  return dbp;
+}
+async function idbGet(k) { const d = await db(); return new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+async function idbSet(k, v) { const d = await db(); return new Promise((res, rej) => { const tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); }
+let saveT = null;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => idbSet('current', P).catch(e => toast('Sauvegarde automatique impossible : ' + e.message, 5000)), 500); }
+
+/* ---------- Affichage ---------- */
+function renderHeader() {
+  const i = P.info;
+  $('#projName').textContent = [i.projet, i.objet].filter(Boolean).join(' – ') || 'Dossier photographique';
+  $('#projMeta').textContent = [i.affaire, fmtDate(i.date)].filter(Boolean).join(', ');
+}
+function renderTabs() {
+  const t = $('#tabs'); t.innerHTML = '';
+  P.plans.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (p.id === curId ? ' on' : '');
+    b.textContent = `${p.name} (${pointsOf(p.id).length})`;
+    b.onclick = () => showPlan(p.id);
+    t.append(b);
+  });
+  if (curPlan()) {
+    const r = document.createElement('button'); r.className = 'tab ghost'; r.textContent = 'Renommer ce plan'; r.onclick = renamePlan;
+    const d = document.createElement('button'); d.className = 'tab ghost'; d.textContent = 'Retirer ce plan'; d.onclick = removePlan;
+    t.append(r, d);
+  }
+  t.hidden = !P.plans.length;
+}
+function showPlan(id) {
+  curId = id; selId = null; $('#sheet').hidden = true;
+  const p = curPlan();
+  $('#empty').hidden = !!p; $('#tools').hidden = !p; stage.hidden = !p;
+  renderTabs();
+  if (!p) { planImg.removeAttribute('src'); draw(); return; }
+  planImg.src = p.img; planImg.width = p.w; planImg.height = p.h;
+  stage.style.width = p.w + 'px'; stage.style.height = p.h + 'px';
+  fit();
+}
+function fit() {
+  const p = curPlan(); if (!p) return;
+  const W = vp.clientWidth, H = vp.clientHeight;
+  const s = Math.min(W / p.w, H / p.h) * 0.94;
+  view.s = s; view.tx = (W - p.w * s) / 2; view.ty = (H - p.h * s) / 2; apply();
+}
+function apply() { stage.style.transform = `translate(${view.tx}px,${view.ty}px) scale(${view.s})`; draw(); }
+function clampS(s) { const p = curPlan(); const min = Math.min(vp.clientWidth / p.w, vp.clientHeight / p.h) * 0.3; return Math.max(min, Math.min(s, 4)); }
+function toScreen(pt) { const p = curPlan(); return [view.tx + pt.x * p.w * view.s, view.ty + pt.y * p.h * view.s]; }
+function toPlan(sx, sy) { const p = curPlan(); return [(sx - view.tx) / (view.s * p.w), (sy - view.ty) / (view.s * p.h)]; }
+
+/* Repère : cône de vision + pastille numérotée. Angle en degrés, 0 = haut du plan, sens horaire. */
+const SR = 44, Sr = 13;
+function wedgePath(X, Y, ang, R) {
+  const c = (ang - 90) * Math.PI / 180, h = Math.PI / 6;
+  const x1 = X + R * Math.cos(c - h), y1 = Y + R * Math.sin(c - h), x2 = X + R * Math.cos(c + h), y2 = Y + R * Math.sin(c + h);
+  return `M${X} ${Y}L${x1} ${y1}A${R} ${R} 0 0 1 ${x2} ${y2}Z`;
+}
+function handlePos(pt) { const [X, Y] = toScreen(pt); const c = (pt.angle - 90) * Math.PI / 180; return [X + (SR + 8) * Math.cos(c), Y + (SR + 8) * Math.sin(c)]; }
+function draw() {
+  const p = curPlan(); let back = '', front = '';
+  if (p) {
+    for (const pt of pointsOf(p.id)) {
+      const [X, Y] = toScreen(pt), on = pt.id === selId, n = numOf(pt), ext = pt.side === 'ext';
+      back += `<path d="${wedgePath(X, Y, pt.angle, SR)}" fill="${MARK}" fill-opacity="${on ? .4 : .24}" stroke="${MARK}" stroke-width="1.5"/>`;
+      if (on) front += `<circle cx="${X}" cy="${Y}" r="${Sr + 6}" fill="none" stroke="${MARK}" stroke-width="2" stroke-dasharray="3 3"/>`;
+      front += `<circle cx="${X}" cy="${Y}" r="${Sr}" fill="${ext ? '#fff' : MARK}" stroke="${MARK}" stroke-width="2.5"/>`
+        + `<text x="${X}" y="${Y}" text-anchor="middle" dominant-baseline="central" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="13" fill="${ext ? MARK : '#fff'}">${n}</text>`;
+      if (on) { const [hx, hy] = handlePos(pt); front += `<circle cx="${hx}" cy="${hy}" r="11" fill="#fff" stroke="${MARK}" stroke-width="2.5"/>`; }
+    }
+    if (G && G.type === 'create') {
+      back += `<path d="${wedgePath(G.sx, G.sy, G.angle, SR)}" fill="${MARK}" fill-opacity=".4" stroke="${MARK}" stroke-width="1.5"/>`;
+      front += `<circle cx="${G.sx}" cy="${G.sy}" r="${Sr}" fill="${MARK}" stroke="${MARK}" stroke-width="2.5"/>`;
+    }
+  }
+  svg.innerHTML = back + front;
+}
+
+/* ---------- Gestes : placer, orienter, déplacer, zoomer ---------- */
+const ptrs = new Map();
+function local(e) { const r = vp.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+function angleFrom(X, Y, sx, sy) { const a = Math.atan2(sx - X, -(sy - Y)) * 180 / Math.PI; return Math.round((a + 360) % 360); }
+function hitMarker(sx, sy) {
+  const p = curPlan(); let best = null, bd = 24;
+  for (const pt of pointsOf(p.id)) { const [X, Y] = toScreen(pt); const d = dist(sx, sy, X, Y); if (d < bd) { bd = d; best = pt; } }
+  return best;
+}
+function hitHandle(sx, sy) { const pt = selPoint(); if (!pt || pt.planId !== curId) return null; const [hx, hy] = handlePos(pt); return dist(sx, sy, hx, hy) < 22 ? pt : null; }
+const lastAngle = () => P.points.length ? P.points[P.points.length - 1].angle : 0;
+
+vp.addEventListener('pointerdown', e => {
+  if (!curPlan()) return;
+  vp.setPointerCapture(e.pointerId);
+  const [sx, sy] = local(e); ptrs.set(e.pointerId, [sx, sy]);
+  if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    G = { type: 'pinch', d0: dist(...a, ...b) || 1, m0: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], s0: view.s, tx0: view.tx, ty0: view.ty };
+    draw(); return;
+  }
+  if (ptrs.size > 2) return;
+  const hp = hitHandle(sx, sy); if (hp) { G = { type: 'rotate', id: hp.id }; return; }
+  const mp = hitMarker(sx, sy); if (mp) { G = { type: 'marker', id: mp.id, sx, sy, moved: false }; return; }
+  G = mode === 'place' ? { type: 'create', sx, sy, angle: lastAngle() } : { type: 'pan', sx, sy, tx0: view.tx, ty0: view.ty, moved: false };
+  draw();
+});
+vp.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return;
+  const [sx, sy] = local(e); ptrs.set(e.pointerId, [sx, sy]);
+  if (!G) return;
+  if (G.type === 'pinch') {
+    if (ptrs.size < 2) return;
+    const [a, b] = [...ptrs.values()], d = dist(...a, ...b), m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const s = clampS(G.s0 * d / G.d0), px = (G.m0[0] - G.tx0) / G.s0, py = (G.m0[1] - G.ty0) / G.s0;
+    view.s = s; view.tx = m[0] - px * s; view.ty = m[1] - py * s; apply(); return;
+  }
+  if (G.type === 'rotate') {
+    const pt = P.points.find(p => p.id === G.id); const [X, Y] = toScreen(pt);
+    pt.angle = angleFrom(X, Y, sx, sy); draw(); syncAngle(pt); return;
+  }
+  if (G.type === 'marker') {
+    if (!G.moved && dist(sx, sy, G.sx, G.sy) < 8) return;
+    if (mode === 'place') {
+      G.moved = true; const pt = P.points.find(p => p.id === G.id); const [x, y] = toPlan(sx, sy);
+      pt.x = clamp01(x); pt.y = clamp01(y); draw();
+    } else G = { type: 'pan', sx, sy, tx0: view.tx, ty0: view.ty, moved: true };
+    return;
+  }
+  if (G.type === 'create') { if (dist(sx, sy, G.sx, G.sy) > 14) G.angle = angleFrom(G.sx, G.sy, sx, sy); draw(); return; }
+  if (G.type === 'pan') {
+    if (dist(sx, sy, G.sx, G.sy) > 4) G.moved = true;
+    view.tx = G.tx0 + sx - G.sx; view.ty = G.ty0 + sy - G.sy; apply();
+  }
+});
+function endPtr(e) {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if (!G) return;
+  if (G.type === 'pinch' || G.type === 'idle') { G = ptrs.size ? { type: 'idle' } : null; return; }
+  const g = G; G = null;
+  if (e.type === 'pointercancel') { draw(); return; }
+  if (g.type === 'create') {
+    const [x, y] = toPlan(g.sx, g.sy);
+    if (x >= 0 && x <= 1 && y >= 0 && y <= 1) addPoint(x, y, g.angle); else draw();
+  } else if (g.type === 'marker') { if (g.moved) save(); select(g.id); }
+  else if (g.type === 'rotate') save();
+  else if (g.type === 'pan' && !g.moved) select(null);
+}
+vp.addEventListener('pointerup', endPtr);
+vp.addEventListener('pointercancel', endPtr);
+vp.addEventListener('wheel', e => {
+  if (!curPlan()) return; e.preventDefault();
+  const [sx, sy] = local(e), s = clampS(view.s * Math.exp(-e.deltaY * 0.0015));
+  const px = (sx - view.tx) / view.s, py = (sy - view.ty) / view.s;
+  view.s = s; view.tx = sx - px * s; view.ty = sy - py * s; apply();
+}, { passive: false });
+document.addEventListener('gesturestart', e => e.preventDefault());
+
+let lastW = 0;
+new ResizeObserver(() => { const w = vp.clientWidth; if (w !== lastW) { lastW = w; fit(); } else draw(); }).observe(vp);
+
+function setMode(m) {
+  mode = m; vp.className = m;
+  $('#modePlace').setAttribute('aria-pressed', m === 'place');
+  $('#modeNav').setAttribute('aria-pressed', m === 'nav');
+}
+$('#modePlace').onclick = () => setMode('place');
+$('#modeNav').onclick = () => setMode('nav');
+$('#btnFit').onclick = fit;
+
+/* ---------- Points ---------- */
+function addPoint(x, y, angle) {
+  const last = P.points[P.points.length - 1];
+  const pt = { id: uid(), planId: curId, x, y, angle, side: last ? last.side : 'int', legend: '', photo: null, pw: 0, ph: 0 };
+  P.points.push(pt); save(); renderTabs(); select(pt.id);
+}
+function select(id) { selId = id; draw(); if (id) openSheet(); else $('#sheet').hidden = true; }
+function syncAngle(pt) { if (pt.id !== selId) return; $('#sAngle').value = pt.angle; $('#sAngleOut').textContent = pt.angle + '°'; }
+function openSheet() {
+  const pt = selPoint(); if (!pt) { $('#sheet').hidden = true; return; }
+  $('#sheet').hidden = false;
+  $('#sNum').textContent = 'Point ' + numOf(pt);
+  $('#sPhoto').innerHTML = pt.photo ? `<img src="${pt.photo}" alt="Photo du point ${numOf(pt)}">` : '<span>Pas encore de photo</span>';
+  $('#sCam').textContent = pt.photo ? 'Reprendre la photo' : 'Prendre la photo';
+  $('#sRot').disabled = !pt.photo;
+  $('#sInt').setAttribute('aria-pressed', pt.side !== 'ext');
+  $('#sExt').setAttribute('aria-pressed', pt.side === 'ext');
+  syncAngle(pt);
+  $('#sLegend').value = pt.legend || '';
+}
+$('#sClose').onclick = () => select(null);
+let photoFor = null;
+$('#sCam').onclick = () => { photoFor = selId; $('#inCam').value = ''; $('#inCam').click(); };
+$('#sPick').onclick = () => { photoFor = selId; $('#inPick').value = ''; $('#inPick').click(); };
+$('#inCam').onchange = e => handlePhoto(e.target.files[0]);
+$('#inPick').onchange = e => handlePhoto(e.target.files[0]);
+async function handlePhoto(file) {
+  const pt = P.points.find(p => p.id === photoFor); if (!file || !pt) return;
+  toast('Traitement de la photo…', 0);
+  try {
+    const url = URL.createObjectURL(file); const img = await loadImg(url);
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+    pt.photo = c.toDataURL('image/jpeg', 0.82); pt.pw = c.width; pt.ph = c.height;
+    save(); if (pt.id === selId) openSheet(); toast(`Photo ajoutée au point ${numOf(pt)}.`);
+  } catch (err) { toast('Cette image n’a pas pu être lue : ' + err.message, 5000); }
+}
+$('#sRot').onclick = async () => {
+  const pt = selPoint(); if (!pt || !pt.photo) return;
+  const img = await loadImg(pt.photo); const c = document.createElement('canvas');
+  c.width = img.naturalHeight; c.height = img.naturalWidth; const x = c.getContext('2d');
+  x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(img, 0, 0);
+  pt.photo = c.toDataURL('image/jpeg', 0.85); pt.pw = c.width; pt.ph = c.height; save(); openSheet();
+};
+$('#sInt').onclick = () => { const pt = selPoint(); pt.side = 'int'; save(); openSheet(); draw(); };
+$('#sExt').onclick = () => { const pt = selPoint(); pt.side = 'ext'; save(); openSheet(); draw(); };
+$('#sAngle').oninput = e => { const pt = selPoint(); pt.angle = +e.target.value; $('#sAngleOut').textContent = pt.angle + '°'; draw(); save(); };
+$('#sLegend').oninput = e => { const pt = selPoint(); pt.legend = e.target.value; save(); };
+$('#sDel').onclick = () => {
+  const pt = selPoint(); if (!pt) return;
+  if (!confirm(`Supprimer le point ${numOf(pt)} ? Les points suivants seront renumérotés.`)) return;
+  P.points = P.points.filter(p => p.id !== pt.id); save(); renderTabs(); select(null);
+};
+
+/* ---------- Plans ---------- */
+$('#btnPlan').onclick = $('#emptyPlan').onclick = () => { $('#inPdf').value = ''; $('#inPdf').click(); };
+$('#inPdf').onchange = e => { if (e.target.files[0]) importPdf(e.target.files[0]); };
+async function importPdf(file) {
+  if (!window.pdfjsLib) { toast('Le lecteur PDF n’a pas pu se charger. Recharge la page.', 5000); return; }
+  toast('Lecture du PDF…', 0);
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const base = file.name.replace(/\.pdf$/i, ''), n = pdf.numPages; let first = null;
+    for (let i = 1; i <= n; i++) {
+      toast(`Préparation du plan ${i} sur ${n}…`, 0);
+      const page = await pdf.getPage(i), v1 = page.getViewport({ scale: 1 });
+      const v = page.getViewport({ scale: Math.min(3000 / Math.max(v1.width, v1.height), 4) });
+      const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: x, viewport: v }).promise;
+      const plan = { id: uid(), name: n > 1 ? `${base} – p. ${i}` : base, img: c.toDataURL('image/jpeg', 0.9), w: c.width, h: c.height };
+      P.plans.push(plan); if (!first) first = plan.id; c.width = c.height = 0;
+    }
+    save(); showPlan(first); setMode('place');
+    toast(n > 1 ? `${n} pages ajoutées, une par plan. Retire celles qui ne servent pas.` : 'Plan ajouté. Touche le plan pour placer un point, glisse pour l’orienter.', 5000);
+  } catch (err) { toast('Ce PDF n’a pas pu être lu : ' + err.message, 5000); }
+}
+function renamePlan() {
+  const p = curPlan(); const n = prompt('Nom du plan', p.name);
+  if (n && n.trim()) { p.name = n.trim(); save(); renderTabs(); }
+}
+function removePlan() {
+  const p = curPlan(); const k = pointsOf(p.id).length;
+  if (!confirm(k ? `Retirer « ${p.name} » et ses ${k} point(s) ?` : `Retirer « ${p.name} » ?`)) return;
+  P.plans = P.plans.filter(x => x.id !== p.id); P.points = P.points.filter(x => x.planId !== p.id);
+  save(); showPlan(P.plans[0] ? P.plans[0].id : null);
+}
+
+/* ---------- Projet, fichiers ---------- */
+function slug(s) { return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+function fmtDate(d) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); return m ? `${m[3]}.${m[2]}.${m[1]}` : ''; }
+function baseName(info = P.info) {
+  const o = slug(info.objet);
+  return `${slug(info.affaire) || 'AFFAIRE'}_MR_Dossier-photographique${o ? '_' + o : ''}_${info.date || today()}`;
+}
+const F = $('#fProjet');
+function formInfo() { const f = new FormData(F); return { affaire: f.get('affaire').trim(), projet: f.get('projet').trim(), objet: f.get('objet').trim(), auteur: f.get('auteur').trim(), date: f.get('date') || today(), taille: +f.get('taille') || 1 }; }
+$('#btnProjet').onclick = () => {
+  for (const k of ['affaire', 'projet', 'objet', 'auteur', 'date']) F.elements[k].value = P.info[k] || '';
+  F.elements.taille.value = String(P.info.taille || 1);
+  $('#fnPreview').textContent = baseName() + '.pdf';
+  $('#dlgProjet').showModal();
+};
+F.addEventListener('input', () => { $('#fnPreview').textContent = baseName(formInfo()) + '.pdf'; });
+$('#dlgProjet').addEventListener('close', () => { P.info = formInfo(); save(); renderHeader(); });
+$('#pjSave').onclick = () => {
+  $('#dlgProjet').close();
+  deliver(new Blob([JSON.stringify(P)], { type: 'application/json' }), baseName() + '.json', 'application/json');
+};
+$('#pjOpen').onclick = $('#emptyOpen').onclick = () => { if ($('#dlgProjet').open) $('#dlgProjet').close(); $('#inJson').value = ''; $('#inJson').click(); };
+$('#inJson').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const o = JSON.parse(await f.text());
+    if (o.format !== 'mr-dossier-photo' || !Array.isArray(o.plans) || !Array.isArray(o.points)) throw new Error('ce n’est pas un fichier projet de cette application');
+    if ((P.plans.length || P.points.length) && !confirm('Remplacer le projet en cours par ce fichier ?')) return;
+    o.info = Object.assign(newProject().info, o.info); P = o; save(); renderHeader(); showPlan(P.plans[0] ? P.plans[0].id : null);
+    toast(`Projet ouvert : ${P.plans.length} plan(s), ${P.points.length} point(s).`);
+  } catch (err) { toast('Fichier non ouvert : ' + err.message, 5000); }
+};
+$('#pjNew').onclick = () => {
+  if (!confirm('Commencer un nouveau projet ? Le projet en cours sera effacé de cet appareil. Enregistre d’abord le fichier projet si tu veux le garder.')) return;
+  $('#dlgProjet').close(); P = newProject(); save(); renderHeader(); showPlan(null);
+};
+
+let outFile = null;
+function deliver(blob, name, type) {
+  outFile = new File([blob], name, { type });
+  $('#outName').textContent = name;
+  let share = false;
+  try { share = !!(navigator.canShare && navigator.canShare({ files: [outFile] }) && matchMedia('(pointer:coarse)').matches); } catch (e) {}
+  $('#outShare').hidden = !share;
+  $('#dlgOut').showModal();
+}
+$('#outShare').onclick = async () => {
+  try { await navigator.share({ files: [outFile], title: outFile.name }); $('#dlgOut').close(); }
+  catch (e) { if (e.name !== 'AbortError') toast('Partage impossible ici, utilise Télécharger.', 4000); }
+};
+$('#outDl').onclick = () => {
+  const u = URL.createObjectURL(outFile), a = document.createElement('a');
+  a.href = u; a.download = outFile.name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 5000); $('#dlgOut').close();
+};
+$('#outClose').onclick = () => $('#dlgOut').close();
+
+/* ---------- Export PDF ---------- */
+function drawMarkerCanvas(x, X, Y, ang, n, side, b, part) {
+  const c = (ang - 90) * Math.PI / 180, h = Math.PI / 6, R = 34 * b, r = 10 * b;
+  if (part === 'back') {
+    x.beginPath(); x.moveTo(X, Y); x.arc(X, Y, R, c - h, c + h); x.closePath();
+    x.fillStyle = 'rgba(36,72,201,0.26)'; x.fill(); x.strokeStyle = MARK; x.lineWidth = 1.2 * b; x.stroke(); return;
+  }
+  const ext = side === 'ext';
+  x.beginPath(); x.arc(X, Y, r, 0, Math.PI * 2); x.fillStyle = ext ? '#fff' : MARK; x.fill();
+  x.lineWidth = 2 * b; x.strokeStyle = MARK; x.stroke();
+  x.fillStyle = ext ? MARK : '#fff'; x.font = `bold ${(n > 99 ? 8.5 : 11) * b}px Helvetica, Arial, sans-serif`;
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(n), X, Y + 0.6 * b);
+}
+async function planWithMarkers(pl) {
+  const im = await loadImg(pl.img), c = document.createElement('canvas'); c.width = pl.w; c.height = pl.h;
+  const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+  const b = Math.max(pl.w, pl.h) / 700 * (P.info.taille || 1), pts = pointsOf(pl.id);
+  for (const part of ['back', 'front']) for (const pt of pts) drawMarkerCanvas(x, pt.x * pl.w, pt.y * pl.h, pt.angle, numOf(pt), pt.side, b, part);
+  const d = c.toDataURL('image/jpeg', 0.9); c.width = c.height = 0; return d;
+}
+$('#btnExport').onclick = exportPdf;
+async function exportPdf() {
+  if (!window.jspdf) { toast('Le générateur PDF n’a pas pu se charger. Recharge la page.', 5000); return; }
+  if (!P.points.length) { toast('Place au moins un point avant d’exporter.'); return; }
+  const missing = P.points.filter(p => !p.photo).map(numOf);
+  if (missing.length && !confirm(`Sans photo : point${missing.length > 1 ? 's' : ''} ${missing.join(', ')}. Ils figureront sur le plan mais pas dans les pages photos. Exporter quand même ?`)) return;
+  toast('Génération du PDF…', 0); await nextFrame();
+  try {
+    const { jsPDF } = window.jspdf; let doc = null;
+    const addPage = o => { if (!doc) doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: o, compress: true }); else doc.addPage('a4', o); };
+    const i = P.info, ink = [29, 36, 34], grey = [93, 102, 98];
+    const header = (W, sub) => {
+      doc.setTextColor(...ink); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      doc.text([i.affaire, i.projet].filter(Boolean).join(' – ') || 'Dossier photographique', 12, 12);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      doc.text([i.objet || 'Dossier photographique', fmtDate(i.date)].filter(Boolean).join(' – '), W - 12, 12, { align: 'right' });
+      doc.setDrawColor(150); doc.setLineWidth(0.2); doc.line(12, 14.5, W - 12, 14.5);
+      if (sub) { doc.setTextColor(...grey); doc.text(sub, 12, 19.5); }
+    };
+
+    for (const pl of P.plans.filter(p => pointsOf(p.id).length)) {
+      const o = pl.w >= pl.h ? 'l' : 'p', W = o === 'l' ? 297 : 210, H = o === 'l' ? 210 : 297;
+      addPage(o); header(W, pl.name);
+      const img = await planWithMarkers(pl);
+      const bx = 12, by = 23, bw = W - 24, bh = H - 23 - 20, k = Math.min(bw / pl.w, bh / pl.h), iw = pl.w * k, ih = pl.h * k;
+      doc.addImage(img, 'JPEG', bx + (bw - iw) / 2, by + (bh - ih) / 2, iw, ih, undefined, 'FAST');
+      const ly = H - 14; doc.setLineWidth(0.5); doc.setDrawColor(36, 72, 201);
+      doc.setFillColor(36, 72, 201); doc.circle(14, ly - 1, 1.6, 'FD');
+      doc.setTextColor(...grey); doc.setFontSize(8.5); doc.text('Vue depuis l’intérieur', 17.5, ly);
+      doc.setFillColor(255, 255, 255); doc.circle(56, ly - 1, 1.6, 'FD'); doc.text('Vue depuis l’extérieur', 59.5, ly);
+      await nextFrame();
+    }
+
+    const shots = P.points.filter(p => p.photo), planName = id => (P.plans.find(p => p.id === id) || {}).name || '';
+    let s = 0;
+    while (s < shots.length) {
+      const next = shots.slice(s, s + 6), six = next.length > 4 && next.every(p => p.pw >= p.ph);
+      const per = six ? 6 : 4, rows = six ? 3 : 2, page = shots.slice(s, s + per);
+      addPage('p'); header(210, 'Photographies');
+      const X0 = 12, Y0 = 24, AW = 186, AH = 297 - 24 - 16, gap = 6, capH = 10;
+      const cw = (AW - gap) / 2, ch = (AH - gap * (rows - 1)) / rows;
+      page.forEach((pt, j) => {
+        const cx = X0 + (j % 2) * (cw + gap), cy = Y0 + Math.floor(j / 2) * (ch + gap);
+        const bh = ch - capH, k = Math.min(cw / pt.pw, bh / pt.ph), iw = pt.pw * k, ih = pt.ph * k;
+        const ix = cx + (cw - iw) / 2, iy = cy + (bh - ih) / 2;
+        doc.addImage(pt.photo, 'JPEG', ix, iy, iw, ih, undefined, 'FAST');
+        const tw = Math.max(iw, 70), ty = iy + ih + 4.5, label = `Photo ${numOf(pt)}`;
+        doc.setTextColor(...ink); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(label, ix, ty);
+        const w1 = doc.getTextWidth(label);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...grey);
+        doc.text(doc.splitTextToSize(` – ${sideLabel(pt.side)}, ${planName(pt.planId)}`, tw - w1)[0] || '', ix + w1, ty);
+        if (pt.legend) { doc.setTextColor(...ink); doc.text(doc.splitTextToSize(pt.legend, tw)[0], ix, ty + 4); }
+      });
+      s += per; await nextFrame();
+    }
+
+    const n = doc.getNumberOfPages();
+    for (let p = 1; p <= n; p++) {
+      doc.setPage(p); const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...grey);
+      if (i.auteur) doc.text(i.auteur, 12, H - 8);
+      doc.text(`${p} / ${n}`, W - 12, H - 8, { align: 'right' });
+    }
+    $('#toast').hidden = true;
+    deliver(doc.output('blob'), baseName() + '.pdf', 'application/pdf');
+  } catch (err) { toast('Le PDF n’a pas pu être généré : ' + err.message, 6000); }
+}
+
+/* ---------- Démarrage ---------- */
+(async () => {
+  try {
+    const s = await idbGet('current');
+    if (s && s.format === 'mr-dossier-photo') { s.info = Object.assign(newProject().info, s.info); P = s; }
+  } catch (e) { toast('La sauvegarde automatique n’est pas disponible dans ce navigateur.', 5000); }
+  renderHeader(); showPlan(P.plans[0] ? P.plans[0].id : null); setMode('place');
+})();
+</script>
+</body>
+</html>
