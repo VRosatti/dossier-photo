@@ -1,7 +1,7 @@
 /* Fonctionnement hors ligne : les fichiers de l'app sont gardés en cache sur l'appareil.
    Après une mise à jour du dépôt, augmenter le numéro de version ci-dessous. */
 const PREFIX = 'dossier-photo-';
-const VERSION = PREFIX + 'v1';
+const VERSION = PREFIX + 'v3';
 const FILES = [
   './', './index.html', './manifest.webmanifest',
   './vendor/jspdf.umd.min.js', './vendor/pdf.min.js', './vendor/pdf.worker.min.js',

@@ -151,6 +151,9 @@ input:focus,textarea:focus{border-color:var(--signal);outline:none}
 .exports .btn{text-align:left}
 .plan-row{display:flex;gap:8px;align-items:center;margin-top:8px}
 .plan-row input{flex:1;min-width:0}
+.plan-row .btn{padding:10px 12px}
+.plan-row .n{display:none}
+@media (min-width:560px){ .plan-row .n{display:block} }
 .plan-row .n{color:var(--muted);font-size:.85rem;flex:none;min-width:5.5em;text-align:right}
 .vrow{width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:8px}
 .vrow.cur{border-color:var(--signal);border-width:2px}
@@ -222,7 +225,7 @@ input:focus,textarea:focus{border-color:var(--signal);outline:none}
     <button class="help" aria-expanded="false" aria-controls="h-point" aria-label="Aide : modifier une photo">?</button>
     <button class="link" id="pnClose">Fermer</button>
   </div>
-  <div class="tip" id="h-point" hidden><p>« Replacer » reprend le placement : pose le doigt à l'endroit d'où tu as pris la photo et glisse vers ce que tu regardais. Tu peux changer de plan avant de la placer.</p><p>« Reprendre la photo » remplace l'image sans toucher au point. La légende est facultative : elle apparaît sous la photo dans le PDF.</p><p>Si tu supprimes une photo, les suivantes sont renumérotées.</p></div>
+  <div class="tip" id="h-point" hidden><p>« Replacer » reprend le placement : pose le doigt à l'endroit d'où tu as pris la photo et glisse vers ce que tu regardais. Tu peux changer de plan avant de la placer.</p><p>« Reprendre la photo » remplace l'image sans toucher au point. La légende est facultative : elle apparaît en entier sous la photo dans le PDF.</p><p>Pour dicter la légende, touche le micro du clavier et parle normalement. Si rien ne s'écrit, la langue de dictée du clavier doit être le français (France) : le français (Suisse) ne fonctionne pas.</p><p>Si tu supprimes une photo, les suivantes sont renumérotées.</p></div>
   <div class="shot" id="pnShot"></div>
   <p class="where" id="pnWhere"></p>
   <div class="field" style="margin-top:12px"><label for="pnLegend">Légende (facultatif)</label><input type="text" id="pnLegend" placeholder="Ex. Façade sud, vue d'ensemble"></div>
@@ -256,13 +259,13 @@ input:focus,textarea:focus{border-color:var(--signal);outline:none}
     <div class="field"><label for="dNotes">Remarques générales</label><textarea id="dNotes" data-k="notes" placeholder="Optionnel"></textarea></div>
 
     <div class="section">
-      <div class="lbl-row"><h3>Plans</h3><button class="help" aria-expanded="false" aria-controls="h-plans" aria-label="Aide : plans">?</button></div><div class="tip" id="h-plans" hidden><p>Ajoute les plans en PDF avant la visite, au bureau : sur iPad, le sélecteur ouvre l'app Fichiers, où le serveur du bureau peut être connecté. Un PDF de plusieurs pages donne un plan par page.</p><p>Donne un nom court à chaque plan (« Rez », « Façade nord ») : il apparaît en haut de l'écran, sur le PDF et sous chaque photo.</p><p>« Retirer » demande une confirmation. Les photos placées sur ce plan ne sont pas supprimées : elles passent dans « À placer ».</p></div>
+      <div class="lbl-row"><h3>Plans</h3><button class="help" aria-expanded="false" aria-controls="h-plans" aria-label="Aide : plans">?</button></div><div class="tip" id="h-plans" hidden><p>Ajoute les plans en PDF avant la visite, au bureau : sur iPad, le sélecteur ouvre l'app Fichiers, où le serveur du bureau peut être connecté. Un PDF de plusieurs pages donne un plan par page.</p><p>Donne un nom court à chaque plan (« Rez », « Façade nord ») : il apparaît en haut de l'écran et dans le PDF.</p><p>L'ordre des plans fixe l'ordre du PDF et la numérotation des photos : les photos du premier plan sont numérotées en premier, dans l'ordre où tu les as prises, puis celles du plan suivant. Les flèches ↑ ↓ changent cet ordre, et les numéros suivent automatiquement.</p><p>« Retirer » demande une confirmation. Les photos placées sur ce plan ne sont pas supprimées : elles passent dans « À placer ».</p></div>
       <div id="planList"></div>
       <div class="row"><button class="btn primary grow" id="addPlan">Ajouter un plan PDF</button></div>
     </div>
 
     <div class="section" id="exportSection">
-      <div class="lbl-row"><h3>Exporter en PDF A4</h3><button class="help" aria-expanded="false" aria-controls="h-exp" aria-label="Aide : export">?</button></div><div class="tip" id="h-exp" hidden><p>Le dossier contient la page de garde, puis chaque plan avec ses points numérotés, puis les photos dans l'ordre des numéros : 6 par page si elles sont toutes en largeur, 4 sinon.</p><p>« Envoyer » ouvre le menu de partage avec le PDF joint : choisis ton application e-mail, puis le destinataire.</p><p>Relis toujours le PDF avant de l'envoyer : l'app met en page, mais le contenu reste sous ta responsabilité.</p></div>
+      <div class="lbl-row"><h3>Exporter en PDF A4</h3><button class="help" aria-expanded="false" aria-controls="h-exp" aria-label="Aide : export">?</button></div><div class="tip" id="h-exp" hidden><p>Le dossier contient la page de garde, puis chaque plan suivi de ses photos : 6 par page si elles sont toutes en largeur, 4 sinon. Les photos pas encore situées viennent à la fin. Les légendes sont reprises en entier.</p><p>« Envoyer » ouvre le menu de partage avec le PDF joint : choisis ton application e-mail, puis le destinataire.</p><p>Relis toujours le PDF avant de l'envoyer : l'app met en page, mais le contenu reste sous ta responsabilité.</p></div>
       <p class="hint" id="expInfo"></p>
       <div class="row">
         <button class="btn primary grow" id="pdfDl">Télécharger le PDF</button>
@@ -321,7 +324,8 @@ input:focus,textarea:focus{border-color:var(--signal);outline:none}
       <li><strong>Naviguer</strong> : deux doigts pour zoomer et déplacer le plan, y compris pendant le placement. Le bouton ⤢ réaffiche le plan entier.</li>
       <li><strong>Plusieurs plans</strong> : touche le nom d'un plan, sous le titre, pour en changer. Tu peux le faire au moment de placer une photo.</li>
       <li><strong>Photos déjà prises</strong> : « Galerie » importe une ou plusieurs photos, que tu places l'une après l'autre. « Plus tard » met une photo de côté : elle attend dans « À placer ».</li>
-      <li><strong>Corriger</strong> : touche un point sur le plan pour revoir la photo, la replacer, la reprendre, lui donner une légende ou la supprimer.</li>
+      <li><strong>Corriger, légender</strong> : touche un point sur le plan pour revoir la photo, la replacer, la reprendre, lui donner une légende ou la supprimer. La légende se dicte avec le micro du clavier, réglé en français (France).</li>
+      <li><strong>Numérotation</strong> : les photos sont numérotées plan par plan, dans l'ordre des plans, puis dans l'ordre où tu les as prises. Change l'ordre des plans dans « Dossier » : les numéros suivent.</li>
       <li><strong>Envoyer</strong> : le bouton « PDF » produit le dossier complet, à télécharger ou à envoyer par e-mail.</li>
       <li><strong>Sauvegarder</strong> : les données ne restent que sur cet appareil. Pense à la sauvegarde dans « Dossier ».</li>
     </ol>
@@ -383,7 +387,7 @@ input:focus,textarea:focus{border-color:var(--signal);outline:none}
 <script>
 (function(){
 'use strict';
-const APP_VERSION = '1.0 – 28.10.2026';
+const APP_VERSION = '1.2 – 28.10.2026';
 const $ = s => document.querySelector(s);
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2));
 const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
@@ -477,10 +481,18 @@ const dossierName = v => [v.project, v.sector].filter(x=>(x||'').trim()).join(' 
 const plural = (n,w) => n+' '+w+(n>1?'s':'');
 const curPlan = () => D.plans.find(p=>p.id===D.curPlan) || null;
 const planById = id => D.plans.find(p=>p.id===id) || null;
-const pointsOf = id => D.points.filter(p=>p.planId===id);
-const numOf = pt => D.points.indexOf(pt)+1;
+const pointsOf = id => D.points.filter(p=>p.planId===id).sort(byCreated);
+const byCreated = (a,b) => (a.created||0)-(b.created||0);
+/* Numérotation : plan par plan, dans l'ordre des plans ; sur chaque plan, dans l'ordre de prise de vue ; photos non situées à la fin. */
+function ordered(){
+  const out=[];
+  D.plans.forEach(p=>out.push(...D.points.filter(x=>x.planId===p.id).sort(byCreated)));
+  out.push(...D.points.filter(x=>!planById(x.planId)).sort(byCreated));
+  return out;
+}
+const numOf = pt => ordered().indexOf(pt)+1;
 const pointById = id => D.points.find(p=>p.id===id) || null;
-const unplaced = () => D.points.filter(p=>!planById(p.planId));
+const unplaced = () => D.points.filter(p=>!planById(p.planId)).sort(byCreated);
 
 /* ---------- Affichage ---------- */
 function renderTop(){
@@ -548,6 +560,7 @@ function markerSvg(X,Y,ang,n,opts){
 }
 function draw(){
   const p=curPlan(); let back='', front='';
+  const ord=ordered(), numOf=pt=>ord.indexOf(pt)+1;
   if(p){
     for(const pt of pointsOf(p.id)){
       if(placing && pt.id===placing.id) continue;
@@ -555,7 +568,7 @@ function draw(){
       front+=markerSvg(X,Y,pt.angle,numOf(pt),{on:pt.id===selId});
     }
     if(placing){
-      const pt=pointById(placing.id), n=pt?numOf(pt):'';
+      const pt=pointById(placing.id), n=pt&&planById(pt.planId)?numOf(pt):'';
       if(G && G.type==='aim'){
         const moved=G.moved;
         front+=markerSvg(G.sx,G.sy,moved?G.angle:null,n,{on:true,big:true});
@@ -673,7 +686,7 @@ function renderBanner(){
   const b=$('#banner'); if(!placing){ b.hidden=true; return; }
   const pt=pointById(placing.id); b.hidden=false;
   const rest=queue.length>1 ? ` (encore ${queue.length-1} ensuite)` : '';
-  $('#bTitle').textContent = 'Photo '+numOf(pt)+rest;
+  $('#bTitle').textContent = (planById(pt.planId) ? 'Photo '+numOf(pt) : 'Nouvelle photo')+rest;
   $('#bText').textContent = placing.pos
     ? 'Touche maintenant vers où tu regardais.'
     : "Pose le doigt là d'où tu as pris la photo, puis glisse vers ce que tu regardais.";
@@ -693,12 +706,12 @@ function commitPlace(x,y,angle){
   const pt=pointById(placing.id); const p=curPlan();
   pt.planId=p.id; pt.x=Math.round(x*1e4)/1e4; pt.y=Math.round(y*1e4)/1e4; pt.angle=angle;
   saveSoon(); renderTabs(); renderTop();
-  toast(`Photo ${numOf(pt)} placée sur « ${p.name} ».`);
+  toast(`Photo ${numOf(pt)} placée sur « ${p.name} ».`+(numOf(pt)<ordered().length-unplaced().length?' Les suivantes sont renumérotées.':''));
   nextInQueue();
 }
 $('#bLater').addEventListener('click',()=>{
   const pt=pointById(placing&&placing.id);
-  if(pt && !planById(pt.planId)) toast(`Photo ${numOf(pt)} mise de côté dans « À placer ».`);
+  if(pt && !planById(pt.planId)) toast('Photo mise de côté dans « À placer ».');
   nextInQueue();
 });
 $('#bThumb').addEventListener('click',()=>$('#banner').classList.toggle('zoom'));
@@ -717,11 +730,11 @@ async function readPhoto(file){
   } finally { URL.revokeObjectURL(url); }
 }
 async function addPhotos(files){
-  const ids=[];
+  const ids=[]; let k=0;
   for(const f of files){
     try{
       const {data,w,h}=await readPhoto(f);
-      const pt={id:uid(), planId:null, x:0, y:0, angle:0, photoId:uid(), pw:w, ph:h, legend:'', created:Date.now()};
+      const pt={id:uid(), planId:null, x:0, y:0, angle:0, photoId:uid(), pw:w, ph:h, legend:'', created:(f.lastModified||Date.now())+(k++)};
       await putImg(pt.photoId,data); D.points.push(pt); ids.push(pt.id);
     }catch(e){ toast("Une image n'a pas pu être lue : "+(f.name||'photo'),5000); }
   }
@@ -810,13 +823,19 @@ function renderPlanList(){
     const i=document.createElement('input'); i.type='text'; i.value=p.name; i.setAttribute('aria-label','Nom du plan');
     i.addEventListener('input',()=>{ p.name=i.value.trim()||'Plan'; saveSoon(); renderTabs(); });
     const n=document.createElement('span'); n.className='n'; n.textContent=plural(pointsOf(p.id).length,'photo');
+    const idx=D.plans.indexOf(p);
+    const mv=(d,lbl,txt)=>{ const m=document.createElement('button'); m.className='btn'; m.textContent=txt; m.setAttribute('aria-label',lbl);
+      m.disabled = idx+d<0 || idx+d>=D.plans.length;
+      m.addEventListener('click',()=>{ const a=D.plans; [a[idx],a[idx+d]]=[a[idx+d],a[idx]]; saveSoon(); renderPlanList(); renderTabs(); });
+      return m; };
+    const up=mv(-1,'Monter le plan','↑'), down=mv(1,'Descendre le plan','↓');
     const b=document.createElement('button'); b.className='btn danger'; b.textContent='Retirer';
     b.addEventListener('click',()=>twoTap(b,'Confirmer',async()=>{
       D.plans=D.plans.filter(x=>x.id!==p.id); await delImgs([p.imgId]);
       if(D.curPlan===p.id) D.curPlan=D.plans[0]?D.plans[0].id:null;
       await persistD(); renderPlanList(); renderAll(); toast('Plan retiré. Ses photos sont dans « À placer ».',4000);
     }));
-    r.append(i,n,b); w.appendChild(r);
+    r.append(up,down,i,n,b); w.appendChild(r);
   });
 }
 
@@ -997,57 +1016,69 @@ async function exportPdf(mode){
       }
       if(y<LIMIT-14){
         F('normal',10,grey); doc.text('Contenu du dossier',M+2,y); y+=5.5;
-        const rows=usedPlans.map(p=>[p.name, pointsOf(p.id).map(numOf)]);
-        if(loose.length) rows.push(['Photos non situées sur un plan', loose.map(numOf)]);
+        const o2=ordered();
+        const rows=usedPlans.map(p=>[p.name, pointsOf(p.id).map(x=>o2.indexOf(x)+1)]);
+        if(loose.length) rows.push(['Photos non situées sur un plan', loose.map(x=>o2.indexOf(x)+1)]);
         for(const [name,nums] of rows){
           if(y>LIMIT) break;
           F('normal',11); doc.text(fit(name,CW-60)[0],M+2,y);
-          doc.text(plural(nums.length,'photo'),M+150,y,{align:'right'}); y+=5.2;
+          const rng=nums.length>1?`photos ${nums[0]} à ${nums[nums.length-1]}`:`photo ${nums[0]}`;
+          doc.text(rng,M+150,y,{align:'right'}); y+=5.2;
         }
         F('bold',11); if(y<=LIMIT){ doc.text('Total',M+2,y); doc.text(plural(D.points.length,'photo'),M+150,y,{align:'right'}); }
       }
     }
 
-    /* ----- Plans ----- */
-    const planPage=[];
+    /* ----- Chaque plan, puis ses photos ----- */
+    const ord=ordered(), N=pt=>ord.indexOf(pt)+1;
+    const photoPages=async(list,heading)=>{
+      const X0=M, AW=210-2*M, gap=6, cw=(AW-gap)/2;
+      let s=0;
+      while(s<list.length){
+        const next=list.slice(s,s+6), six=next.length>4 && next.every(p=>p.pw>=p.ph);
+        const per=six?6:4, rows=six?3:2, page=list.slice(s,s+per);
+        doc.addPage('a4','p');
+        F('bold',11); doc.text(fit(heading+(s?' (suite)':''),AW)[0],M,20);
+        const Y0=25, AH=297-Y0-17;
+        // hauteur des légendes, ligne par ligne : texte complet, jamais coupé
+        const cap=page.map(pt=>{ F('normal',9.5); return (pt.legend||'').trim() ? fit(pt.legend,cw) : []; });
+        const rowCap=[...Array(rows)].map((_,r)=>Math.max(0,...[0,1].map(c=>{ const l=cap[r*2+c]; return l?l.length:0; })));
+        const capH=r=>6+rowCap[r]*4.2;
+        const bh=(AH-gap*(rows-1)-[...Array(rows)].reduce((t,_,r)=>t+capH(r),0))/rows;
+        let cy=Y0;
+        for(let r=0;r<rows;r++){
+          for(let c=0;c<2;c++){
+            const j=r*2+c, pt=page[j]; if(!pt) continue;
+            const cx=X0+c*(cw+gap), k=Math.min(cw/pt.pw,bh/pt.ph), iw=pt.pw*k, ih=pt.ph*k;
+            const ix=cx+(cw-iw)/2, iy=cy+(bh-ih);
+            const src=await getImg(pt.photoId);
+            try{ doc.addImage(src,'JPEG',ix,iy,iw,ih,undefined,'FAST'); }catch(e){}
+            doc.setDrawColor(200,204,202); doc.setLineWidth(0.2); doc.rect(ix,iy,iw,ih);
+            const ty=cy+bh+4.6;
+            F('bold',10); doc.text('Photo '+N(pt),cx,ty);
+            if(cap[j].length){ F('normal',9.5); doc.text(cap[j],cx,ty+4.4); }
+          }
+          cy+=bh+capH(r)+gap;
+        }
+        s+=per; await tick();
+      }
+    };
     for(const pl of usedPlans){
       const o=pl.w>=pl.h?'l':'p', W=o==='l'?297:210, H=o==='l'?210:297;
-      doc.addPage('a4',o); planPage.push(doc.getNumberOfPages());
+      doc.addPage('a4',o);
       F('bold',13); doc.text(fit(pl.name,W-2*M)[0],M,21);
       const img=await planWithMarkers(pl);
       const bx=M, by=25, bw=W-2*M, bh=H-25-21, k=Math.min(bw/pl.w,bh/pl.h), iw=pl.w*k, ih=pl.h*k;
       doc.addImage(img,'JPEG',bx+(bw-iw)/2,by+(bh-ih)/2,iw,ih,undefined,'FAST');
-      // légende du repère
       const lx=M+2, ly=H-15.5;
       doc.setFillColor(190,202,240); doc.setDrawColor(31,79,209); doc.setLineWidth(0.25);
       doc.triangle(lx,ly,lx+5.2,ly-2.6,lx+5.2,ly+2.6,'FD');
       doc.setFillColor(31,79,209); doc.circle(lx,ly,1.7,'F');
-      F('normal',8.5,grey); doc.text('Point de prise de vue et direction de la photo. Les numéros renvoient aux photos.',lx+8,ly+1.1);
+      F('normal',8.5,grey); doc.text('Point de prise de vue et direction de la photo. Les numéros renvoient aux photos qui suivent ce plan.',lx+8,ly+1.1);
       await tick();
+      await photoPages(pointsOf(pl.id),'Photos – '+pl.name);
     }
-
-    /* ----- Photos : 6 par page si toutes en largeur, sinon 4 ----- */
-    const shots=D.points.slice(); let s=0;
-    while(s<shots.length){
-      const next=shots.slice(s,s+6), six=next.length>4 && next.every(p=>p.pw>=p.ph);
-      const per=six?6:4, rows=six?3:2, page=shots.slice(s,s+per);
-      doc.addPage('a4','p');
-      const X0=M, Y0=20, AW=210-2*M, AH=297-20-17, gap=6, capH=11;
-      const cw=(AW-gap)/2, ch=(AH-gap*(rows-1))/rows;
-      for(let j=0;j<page.length;j++){
-        const pt=page[j], cx=X0+(j%2)*(cw+gap), cy=Y0+Math.floor(j/2)*(ch+gap);
-        const bh=ch-capH, k=Math.min(cw/pt.pw,bh/pt.ph), iw=pt.pw*k, ih=pt.ph*k;
-        const ix=cx+(cw-iw)/2, iy=cy+(bh-ih)/2;
-        const src=await getImg(pt.photoId);
-        try{ doc.addImage(src,'JPEG',ix,iy,iw,ih,undefined,'FAST'); }catch(e){}
-        doc.setDrawColor(200,204,202); doc.setLineWidth(0.2); doc.rect(ix,iy,iw,ih);
-        const tw=Math.max(iw,60), ty=iy+ih+4.6, label='Photo '+numOf(pt), pl=planById(pt.planId);
-        F('bold',10); doc.text(label,ix,ty); const w1=doc.getTextWidth(label);
-        F('normal',9,grey); doc.text(fit(' – '+(pl?pl.name:'non située sur un plan'),tw-w1)[0]||'',ix+w1,ty);
-        if((pt.legend||'').trim()){ F('normal',9.5); doc.text(fit(pt.legend,tw)[0],ix,ty+4.4); }
-      }
-      s+=per; await tick();
-    }
+    if(loose.length) await photoPages(loose,'Photos non situées sur un plan');
 
     /* ----- En-têtes, pieds de page, cartouche ----- */
     const n=doc.getNumberOfPages();
@@ -1074,7 +1105,6 @@ async function exportPdf(mode){
       const rx=M+80, logoW=26, logoH=logoW*((window.PV_ASSETS&&window.PV_ASSETS.logoRatio)||0.77);
       const vw=(W-M-3-logoW-4)-(rx+33);
       const crow=[['DATE DE LA VISITE',fmtDate(D.date)],['ÉTABLI PAR',D.author||'']];
-      if((D.recipient||'').trim()) crow.push(['DESTINATAIRE',D.recipient]);
       crow.push(['PHOTOS',String(D.points.length)],['PAGES',String(n)]);
       let ry=cy+ch-3.2-(crow.length-1)*3.9; F('normal',8.5);
       crow.forEach(([k,v])=>{ doc.text(pdfText(k),rx,ry); doc.text(':',rx+30,ry); doc.text(fit(v,vw)[0]||'',rx+33,ry); ry+=3.9; });
